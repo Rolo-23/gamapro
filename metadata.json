@@ -1,0 +1,5 @@
+{
+  "name": "GAMA - Gestión del Adulto Mayor",
+  "description": "Una aplicación CRUD para gestionar clientes de la tercera edad, incluyendo control de préstamos de artículos y turnos médicos. La interfaz está diseñada para ser simple, legible y accesible.",
+  "requestFramePermissions": []
+}
