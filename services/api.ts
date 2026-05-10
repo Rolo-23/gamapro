@@ -1,42 +1,53 @@
-
 import { Client } from '../types';
-import { MOCK_CLIENTS } from '../constants';
 
-let clients: Client[] = [...MOCK_CLIENTS];
+// URL base de la API del backend
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-const simulateLatency = (ms: number) => new Promise(res => setTimeout(res, ms));
+// Función auxiliar para hacer peticiones HTTP
+async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const url = `${API_URL}${endpoint}`;
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
 
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(error.error || `Error ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// Funciones de la API
 export const getClients = async (): Promise<Client[]> => {
-    await simulateLatency(500);
-    return [...clients];
+  return fetchAPI<Client[]>('/clientes');
+};
+
+export const getClient = async (id: string): Promise<Client> => {
+  return fetchAPI<Client>(`/clientes/${id}`);
 };
 
 export const addClient = async (clientData: Omit<Client, 'id'>): Promise<Client> => {
-    await simulateLatency(300);
-    const newClient: Client = {
-        ...clientData,
-        id: new Date().getTime().toString(),
-    };
-    clients.push(newClient);
-    return newClient;
+  return fetchAPI<Client>('/clientes', {
+    method: 'POST',
+    body: JSON.stringify(clientData),
+  });
 };
 
 export const updateClient = async (id: string, updatedData: Client): Promise<Client> => {
-    await simulateLatency(300);
-    const clientIndex = clients.findIndex(c => c.id === id);
-    if (clientIndex === -1) {
-        throw new Error('Client not found');
-    }
-    clients[clientIndex] = { ...clients[clientIndex], ...updatedData };
-    return clients[clientIndex];
+  return fetchAPI<Client>(`/clientes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updatedData),
+  });
 };
 
 export const deleteClient = async (id: string): Promise<{ id: string }> => {
-    await simulateLatency(300);
-    const initialLength = clients.length;
-    clients = clients.filter(c => c.id !== id);
-    if (clients.length === initialLength) {
-        throw new Error('Client not found');
-    }
-    return { id };
+  return fetchAPI<{ id: string }>(`/clientes/${id}`, {
+    method: 'DELETE',
+  });
 };
