@@ -1,7 +1,7 @@
 import { Client } from '../types';
 
 // URL base de la API del backend
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Función auxiliar para hacer peticiones HTTP
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
