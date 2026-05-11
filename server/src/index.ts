@@ -13,9 +13,12 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // CORS
 app.use(cors({
-  origin: NODE_ENV === 'development'
-    ? ['http://localhost:3000', 'http://127.0.0.1:3000', CORS_ORIGIN]
-    : CORS_ORIGIN,
+  origin: [
+    'http://localhost:3000', 
+    'http://127.0.0.1:3000', 
+    'https://gamapro.vercel.app', // Añadido para Vercel
+    CORS_ORIGIN
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
