@@ -11,28 +11,29 @@ const PORT = process.env.PORT || 3001;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Middleware CORS - más flexible en desarrollo
+// CORS
 app.use(cors({
-  origin: NODE_ENV === 'development' 
+  origin: NODE_ENV === 'development'
     ? ['http://localhost:3000', 'http://127.0.0.1:3000', CORS_ORIGIN]
     : CORS_ORIGIN,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rutas
 app.use('/api/clientes', clientesRouter);
 
-// Ruta de salud
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Servidor funcionando correctamente' });
+// Health check
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', message: 'Servidor GAMA funcionando correctamente', db: 'Neon PostgreSQL' });
 });
 
-// Manejo de errores
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+// Error handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Error:', err);
   res.status(500).json({ error: err.message || 'Error interno del servidor' });
 });
@@ -40,12 +41,11 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Iniciar servidor
 async function startServer() {
   try {
-    // Probar conexión a la base de datos
     await getConnection();
-    
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
       console.log(`📡 API disponible en http://localhost:${PORT}/api`);
+      console.log(`🐘 Base de datos: Neon PostgreSQL`);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
@@ -53,7 +53,7 @@ async function startServer() {
   }
 }
 
-// Manejo de cierre graceful
+// Cierre graceful
 process.on('SIGINT', async () => {
   console.log('\n🛑 Cerrando servidor...');
   await closeConnection();
@@ -67,4 +67,3 @@ process.on('SIGTERM', async () => {
 });
 
 startServer();
-

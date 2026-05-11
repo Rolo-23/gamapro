@@ -1,48 +1,57 @@
-import sql from 'mssql';
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const config: sql.config = {
-  server: process.env.DB_SERVER || 'localhost',
-  port: parseInt(process.env.DB_PORT || '1433'),
-  user: process.env.DB_USER || 'sa',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'gama_system',
-  options: {
-    encrypt: process.env.DB_ENCRYPT === 'true',
-    trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
-    enableArithAbort: true,
+// Pool de conexiones a Neon PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // Neon requiere SSL
   },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
 
-let pool: sql.ConnectionPool | null = null;
+pool.on('error', (err) => {
+  console.error('❌ Error inesperado en el pool de PostgreSQL:', err);
+});
 
-export async function getConnection(): Promise<sql.ConnectionPool> {
-  if (!pool) {
-    try {
-      pool = await sql.connect(config);
-      console.log('✅ Conectado a SQL Server');
-    } catch (error) {
-      console.error('❌ Error conectando a SQL Server:', error);
-      throw error;
-    }
+/**
+ * Ejecuta una query con parámetros y devuelve las filas resultantes.
+ * Reemplaza el patrón pool.request().input().query() de mssql.
+ */
+export async function query<T = any>(
+  text: string,
+  params?: any[]
+): Promise<T[]> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(text, params);
+    return result.rows as T[];
+  } finally {
+    client.release();
   }
-  return pool;
 }
 
+/**
+ * Verifica la conexión a la base de datos.
+ */
+export async function getConnection(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT 1');
+    console.log('✅ Conectado a Neon PostgreSQL');
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Cierra todas las conexiones del pool.
+ */
 export async function closeConnection(): Promise<void> {
-  if (pool) {
-    await pool.close();
-    pool = null;
-    console.log('🔌 Conexión cerrada');
-  }
+  await pool.end();
+  console.log('🔌 Pool de conexiones cerrado');
 }
-
-export { sql };
-
